@@ -1,0 +1,39 @@
+section .data
+    num1 db 5   ; Primer número
+    num2 db 3   ; Segundo número
+    mensaje db "El resultado de la multiplicación es: ", 0xA
+    len_mensaje equ $ - mensaje
+
+segment .bss
+    resultado resb 1   ; Almacena el resultado de la multiplicación
+
+section .text
+global _start
+
+_start:
+    ; Cargar el primer número en AL
+    mov al, [num1]
+    ; Multiplicar por el segundo número
+    mul byte [num2]
+    
+    ; Guardar el resultado en el registro AL y en [resultado]
+    mov [resultado], al
+
+    ; Imprimir el mensaje
+    mov eax, 4         ; syscall para sys_write
+    mov ebx, 1         ; descriptor de archivo para stdout
+    mov ecx, mensaje   ; puntero al mensaje
+    mov edx, len_mensaje  ; longitud del mensaje
+    int 0x80           ; llamar al sistema
+
+    ; Imprimir el resultado
+    mov eax, 4           ; syscall para sys_write
+    mov ebx, 1           ; descriptor de archivo para stdout
+    mov ecx, resultado   ; puntero al resultado
+    mov edx, 1           ; longitud del resultado
+    int 0x80             ; llamar al sistema
+
+    ; Salir del programa
+    mov eax, 1       ; syscall para sys_exit
+    mov ebx, 0       ; código de salida
+    int 0x80         ; llamar al sistema

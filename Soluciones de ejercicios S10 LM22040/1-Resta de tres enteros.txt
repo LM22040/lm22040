@@ -1,0 +1,38 @@
+section .data
+    num1 dw 10  ; Primer entero
+    num2 dw 5   ; Segundo entero
+    num3 dw 3   ; Tercer entero
+    resultado dw 0  ; Variable para almacenar el resultado de la resta
+
+    msg db "El resultado es: ", 0
+    len equ $ - msg
+
+section .text
+    global _start
+    _start:
+        ; Cargar los valores de los enteros en registros
+        mov ax, [num1]
+        sub ax, [num2]  ; Restar el segundo entero al primero
+        sub ax, [num3]  ; Restar el tercer entero al resultado anterior
+
+        ; Guardar el resultado en la variable 'resultado'
+        mov [resultado], ax
+
+        ; Imprimir el mensaje
+        mov eax, 4
+        mov ebx, 1
+        mov ecx, msg
+        mov edx, len
+        int 0x80
+
+        ; Imprimir el resultado
+        mov eax, 4
+        mov ebx, 1
+        mov ecx, resultado
+        mov edx, 2  ; Tamaño en bytes de un registro de 16 bits
+        int 0x80
+
+        ; Salir del programa
+        mov eax, 1
+        xor ebx, ebx
+        int 0x80

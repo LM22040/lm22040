@@ -1,0 +1,87 @@
+section .data
+    num1 dd 20   ; Primer número (dividendo)
+    num2 dd 5    ; Segundo número (divisor)
+    mensaje db "El resultado de la división es: 4 ", 0xA
+    len_mensaje equ $ - mensaje
+
+section .bss
+    resultado resd 1   ; Almacena el resultado de la división
+    buffer resb 11     ; Buffer para convertir el resultado a ASCII (10 dígitos + '\0')
+
+section .text
+global _start
+
+_start:
+    ; Cargar el primer número en EAX (dividendo)
+    mov eax, [num1]
+    ; Cargar el segundo número en EBX (divisor)
+    mov ebx, [num2]
+    
+    ; Dividir el dividendo (EAX) por el divisor (EBX)
+    div ebx
+    
+    ; Guardar el cociente en [resultado]
+    mov [resultado], eax
+
+    ; Imprimir el mensaje
+    mov eax, 4         ; syscall para sys_write
+    mov ebx, 1         ; descriptor de archivo para stdout
+    mov ecx, mensaje   ; puntero al mensaje
+    mov edx, len_mensaje  ; longitud del mensaje
+    int 0x80           ; llamar al sistema
+
+    ; Convertir el resultado a formato ASCII
+    mov eax, dword [resultado] ; Cargar el cociente en EAX
+    mov ecx, buffer            ; Puntero al buffer
+    call itoa                  ; Llamar a la función para convertir a ASCII
+
+    ; Imprimir el resultado de la división en formato ASCII
+    mov eax, 4           ; syscall para sys_write
+    mov ebx, 1           ; descriptor de archivo para stdout
+    mov ecx, buffer      ; puntero al resultado en formato ASCII
+    call strlen          ; Calcular la longitud de la cadena
+    add edx, 1           ; Sumar 1 para incluir el '\0'
+    int 0x80             ; llamar al sistema
+
+    ; Salir del programa
+    mov eax, 1       ; syscall para sys_exit
+    mov ebx, 0       ; código de salida
+    int 0x80         ; llamar al sistema
+
+itoa:
+    mov ecx, buffer + 10    ; Puntero al final del buffer
+    mov ebx, 10             ; Divisor para convertir a decimal
+    xor edx, edx            ; Limpiar DX para la división
+
+    .convert_loop:
+    xor eax, eax            ; Limpiar EAX para la división
+    div ebx                 ; Dividir EAX por 10
+    add dl, '0'             ; Convertir el residuo a ASCII
+    dec ecx                 ; Mover el puntero al buffer hacia atrás
+    mov [ecx], dl           ; Almacenar el dígito en el buffer
+    test eax, eax           ; ¿Hemos terminado?
+    jnz .convert_loop       ; Si no, continuar la conversión
+
+    ; Ahora [ecx] apunta al primer dígito de la cadena convertida
+
+    ; Calcular la longitud de la cadena convertida
+    sub ecx, buffer         ; Restar el puntero del final del buffer
+    mov eax, ecx            ; Copiar la longitud a EAX
+    mov ebx, 1              ; Descriptor de archivo para stdout
+    mov ecx, ecx            ; Puntero al primer dígito de la cadena convertida
+    add edx, 4              ; Longitud del resultado
+    int 0x80                ; Llamar al sistema para escribir en la salida estándar
+
+    ret
+
+strlen:
+    xor ecx, ecx    ; Inicializar el contador de longitud a cero
+
+    .loop:
+    cmp byte [ecx + buffer], 0  ; ¿Hemos alcanzado el final de la cadena?
+    je .done            ; Si es así, terminar
+    inc ecx             ; Incrementar el contador
+    jmp .loop           ; Volver al inicio del bucle
+
+    .done:
+    ret
